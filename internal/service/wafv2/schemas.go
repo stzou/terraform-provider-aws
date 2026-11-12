@@ -7,11 +7,11 @@ import (
 	"math"
 	"sync"
 
-	"github.com/YakDriver/regexache"
 	awstypes "github.com/aws/aws-sdk-go-v2/service/wafv2/types"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/hashicorp/terraform-provider-aws/internal/enum"
+	lazyvalidation "github.com/hashicorp/terraform-provider-aws/internal/sdkv2/validation/lazy"
 	"github.com/hashicorp/terraform-provider-aws/internal/verify"
 	"github.com/hashicorp/terraform-provider-aws/names"
 )
@@ -38,10 +38,7 @@ var ruleLabelsSchema = sync.OnceValue(func() *schema.Schema {
 					Required: true,
 					ValidateFunc: validation.All(
 						validation.StringLenBetween(1, 1024),
-						validation.StringMatch(
-							regexache.MustCompile(`^[0-9A-Za-z_\-:]+$`),
-							"must contain only alphanumeric, underscore, hyphen, and colon characters",
-						),
+						lazyvalidation.StringMatch(`^[0-9A-Za-z_\-:]+$`, "must contain only alphanumeric, underscore, hyphen, and colon characters"),
 					),
 				},
 			},
@@ -236,7 +233,7 @@ var ipSetReferenceStatementSchema = sync.OnceValue(func() *schema.Schema {
 								Required: true,
 								ValidateFunc: validation.All(
 									validation.StringLenBetween(1, 255),
-									validation.StringMatch(regexache.MustCompile(`^[0-9A-Za-z-]+$`), "must contain only alphanumeric and hyphen characters"),
+									lazyvalidation.StringMatch(`^[0-9A-Za-z-]+$`, "must contain only alphanumeric and hyphen characters"),
 								),
 							},
 							"position": {
@@ -264,7 +261,7 @@ var labelMatchStatementSchema = sync.OnceValue(func() *schema.Schema {
 					Required: true,
 					ValidateFunc: validation.All(
 						validation.StringLenBetween(1, 1024),
-						validation.StringMatch(regexache.MustCompile(`^[0-9A-Za-z_\-:]+$`), "must contain only alphanumeric, underscore, hyphen, and colon characters"),
+						lazyvalidation.StringMatch(`^[0-9A-Za-z_\-:]+$`, "must contain only alphanumeric, underscore, hyphen, and colon characters"),
 					),
 				},
 				names.AttrScope: {
@@ -406,7 +403,7 @@ var fieldToMatchBaseSchema = sync.OnceValue(func() *schema.Resource {
 								validation.StringLenBetween(1, 64),
 								// The value is returned in lower case by the API.
 								// Trying to solve it with StateFunc and/or DiffSuppressFunc resulted in hash problem of the rule field or didn't work.
-								validation.StringMatch(regexache.MustCompile(`^.*\S.*$`), "Must be any string that contains at least one non-whitespace character"),
+								lazyvalidation.StringMatch(`^.*\S.*$`, "Must be any string that contains at least one non-whitespace character"),
 							),
 						},
 					},
@@ -425,7 +422,7 @@ var fieldToMatchBaseSchema = sync.OnceValue(func() *schema.Resource {
 								validation.StringLenBetween(1, 30),
 								// The value is returned in lower case by the API.
 								// Trying to solve it with StateFunc and/or DiffSuppressFunc resulted in hash problem of the rule field or didn't work.
-								validation.StringMatch(regexache.MustCompile(`^.*\S.*$`), "Must be any string that contains at least one non-whitespace character"),
+								lazyvalidation.StringMatch(`^.*\S.*$`, "Must be any string that contains at least one non-whitespace character"),
 							),
 						},
 					},
@@ -500,7 +497,7 @@ var jsonBodyMatchPatternSchema = sync.OnceValue(func() *schema.Schema {
 						Type: schema.TypeString,
 						ValidateFunc: validation.All(
 							validation.StringLenBetween(1, 512),
-							validation.StringMatch(regexache.MustCompile(`(/)|(/(([^~])|(~[01]))+)`), "must be a valid JSON pointer")),
+							lazyvalidation.StringMatch(`(/)|(/(([^~])|(~[01]))+)`, "must be a valid JSON pointer")),
 					},
 				},
 			},
@@ -604,7 +601,7 @@ var visibilityConfigSchema = sync.OnceValue(func() *schema.Schema {
 					Required: true,
 					ValidateFunc: validation.All(
 						validation.StringLenBetween(1, 128),
-						validation.StringMatch(regexache.MustCompile(`^[0-9A-Za-z_-]+$`), "must contain only alphanumeric hyphen and underscore characters"),
+						lazyvalidation.StringMatch(`^[0-9A-Za-z_-]+$`, "must contain only alphanumeric hyphen and underscore characters"),
 					),
 				},
 				"sampled_requests_enabled": {
@@ -776,7 +773,7 @@ var monetizeConfigSchema = sync.OnceValue(func() *schema.Schema {
 					Optional: true,
 					ValidateFunc: validation.All(
 						validation.StringLenBetween(1, 3),
-						validation.StringMatch(regexache.MustCompile(`^([1-9][0-9]?|100)$`), "must be an integer between 1 and 100"),
+						lazyvalidation.StringMatch(`^([1-9][0-9]?|100)$`, "must be an integer between 1 and 100"),
 					),
 				},
 			},
@@ -823,7 +820,7 @@ var monetizationConfigSchema = sync.OnceValue(func() *schema.Schema {
 														Required: true,
 														ValidateFunc: validation.All(
 															validation.StringLenBetween(1, 13),
-															validation.StringMatch(regexache.MustCompile(`^([1-9][0-9]{0,8}(\.[0-9]{1,3})?|0\.([1-9][0-9]{0,2}|0[1-9][0-9]?|00[1-9]))$`), "must be a decimal amount between 0.001 and 999999999.999 with up to 3 decimal places"),
+															lazyvalidation.StringMatch(`^([1-9][0-9]{0,8}(\.[0-9]{1,3})?|0\.([1-9][0-9]{0,2}|0[1-9][0-9]?|00[1-9]))$`, "must be a decimal amount between 0.001 and 999999999.999 with up to 3 decimal places"),
 														),
 													},
 													"currency": {
@@ -839,7 +836,7 @@ var monetizationConfigSchema = sync.OnceValue(func() *schema.Schema {
 											Required: true,
 											ValidateFunc: validation.All(
 												validation.StringLenBetween(26, 44),
-												validation.StringMatch(regexache.MustCompile(`^.*\S.*$`), "must not be blank"),
+												lazyvalidation.StringMatch(`^.*\S.*$`, "must not be blank"),
 											),
 										},
 									},
@@ -889,7 +886,7 @@ var customRequestHandlingSchema = sync.OnceValue(func() *schema.Schema {
 								Required: true,
 								ValidateFunc: validation.All(
 									validation.StringLenBetween(1, 64),
-									validation.StringMatch(regexache.MustCompile(`^[0-9A-Za-z_$.-]+$`), "must contain only alphanumeric, hyphen, underscore, dot and $ characters"),
+									lazyvalidation.StringMatch(`^[0-9A-Za-z_$.-]+$`, "must contain only alphanumeric, hyphen, underscore, dot and $ characters"),
 								),
 							},
 							names.AttrValue: {
@@ -917,7 +914,7 @@ var customResponseSchema = sync.OnceValue(func() *schema.Schema {
 					Optional: true,
 					ValidateFunc: validation.All(
 						validation.StringLenBetween(1, 128),
-						validation.StringMatch(regexache.MustCompile(`^[\w\-]+$`), "must contain only alphanumeric, hyphen, and underscore characters"),
+						lazyvalidation.StringMatch(`^[\w\-]+$`, "must contain only alphanumeric, hyphen, and underscore characters"),
 					),
 				},
 				"response_code": {
@@ -935,7 +932,7 @@ var customResponseSchema = sync.OnceValue(func() *schema.Schema {
 								Required: true,
 								ValidateFunc: validation.All(
 									validation.StringLenBetween(1, 64),
-									validation.StringMatch(regexache.MustCompile(`^[0-9A-Za-z_$.-]+$`), "must contain only alphanumeric, hyphen, underscore, dot and $ characters"),
+									lazyvalidation.StringMatch(`^[0-9A-Za-z_$.-]+$`, "must contain only alphanumeric, hyphen, underscore, dot and $ characters"),
 								),
 							},
 							names.AttrValue: {
@@ -962,7 +959,7 @@ var customResponseBodySchema = sync.OnceValue(func() *schema.Schema {
 					Required: true,
 					ValidateFunc: validation.All(
 						validation.StringLenBetween(1, 128),
-						validation.StringMatch(regexache.MustCompile(`^[\w\-]+$`), "must contain only alphanumeric, hyphen, and underscore characters"),
+						lazyvalidation.StringMatch(`^[\w\-]+$`, "must contain only alphanumeric, hyphen, and underscore characters"),
 					),
 				},
 				names.AttrContent: {
@@ -1251,7 +1248,7 @@ func rateBasedStatementSchema(level int) *schema.Schema {
 											Required: true,
 											ValidateFunc: validation.All(
 												validation.StringLenBetween(1, 1024),
-												validation.StringMatch(regexache.MustCompile(`^[0-9A-Za-z_\-:]+$`), "must contain only alphanumeric, underscore, hyphen, and colon characters"),
+												lazyvalidation.StringMatch(`^[0-9A-Za-z_\-:]+$`, "must contain only alphanumeric, underscore, hyphen, and colon characters"),
 											),
 										},
 									},
