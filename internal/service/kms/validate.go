@@ -18,6 +18,8 @@ import (
 const (
 	aliasNameCharPattern    = `[0-9A-Za-z_/-]+`
 	aliasNamePattern        = aliasNamePrefix + aliasNameCharPattern
+	grantNameCharPattern    = `[0-9A-Za-z_:/-]*`
+	grantNamePattern        = `^` + grantNameCharPattern + `$`
 	multiRegionKeyIDPattern = `mrk-[0-9a-f]{32}`
 )
 
@@ -25,19 +27,10 @@ var aliasNameRegex = sync.OnceValue(func() *regexp.Regexp {
 	return regexache.MustCompile(`^` + aliasNamePattern + `$`)
 })
 
-func validGrantName(v any, k string) (ws []string, es []error) {
-	value := v.(string)
-
-	if len(value) > 256 {
-		es = append(es, fmt.Errorf("%s can not be greater than 256 characters", k))
-	}
-
-	if !regexache.MustCompile(`^[0-9A-Za-z_:/-]+$`).MatchString(value) {
-		es = append(es, fmt.Errorf("%s must only contain [0-9A-Za-z_:/-]", k))
-	}
-
-	return
-}
+var validGrantName = validation.All(
+	validation.StringLenBetween(0, 256),
+	lazyvalidation.StringMatch(grantNamePattern, "must only contain "+grantNameCharPattern),
+)
 
 var validNameForDataSource = lazyvalidation.StringMatch(
 	`^`+aliasNamePattern+`$`,
