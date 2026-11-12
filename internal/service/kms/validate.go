@@ -17,14 +17,14 @@ import (
 
 const (
 	aliasNameCharPattern    = `[0-9A-Za-z_/-]+`
-	aliasNamePattern        = aliasNamePrefix + aliasNameCharPattern
+	aliasNamePattern        = `^` + aliasNamePrefix + aliasNameCharPattern + `$`
 	grantNameCharPattern    = `[0-9A-Za-z_:/-]*`
 	grantNamePattern        = `^` + grantNameCharPattern + `$`
 	multiRegionKeyIDPattern = `mrk-[0-9a-f]{32}`
 )
 
 var aliasNameRegex = sync.OnceValue(func() *regexp.Regexp {
-	return regexache.MustCompile(`^` + aliasNamePattern + `$`)
+	return regexache.MustCompile(aliasNamePattern)
 })
 
 var validGrantName = validation.All(
@@ -33,7 +33,7 @@ var validGrantName = validation.All(
 )
 
 var validNameForDataSource = lazyvalidation.StringMatch(
-	`^`+aliasNamePattern+`$`,
+	aliasNamePattern,
 	"must begin with 'alias/' and only contain "+aliasNameCharPattern,
 )
 
@@ -43,7 +43,7 @@ var validNameForResource = validation.All(
 		"cannot begin with reserved AWS CMK prefix '"+cmkAliasPrefix+"'",
 	),
 	lazyvalidation.StringMatch(
-		`^`+aliasNamePattern+`$`,
+		aliasNamePattern,
 		"must begin with 'alias/' and only contain "+aliasNameCharPattern,
 	),
 )
@@ -86,7 +86,7 @@ func validateKeyARN(v any, k string) (ws []string, errors []error) {
 	return
 }
 
-var validateKeyAliasName = lazyvalidation.StringMatch(`^`+aliasNamePattern+`$`, "must be a KMS Key Alias")
+var validateKeyAliasName = lazyvalidation.StringMatch(aliasNamePattern, "must be a KMS Key Alias")
 
 func validateKeyAliasARN(v any, k string) (ws []string, errors []error) {
 	value, ok := v.(string)
